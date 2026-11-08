@@ -1,0 +1,620 @@
+﻿<html>
+	<head>
+		<style>
+			body { margin: 0; overflow: hidden; }
+			canvas { width: 100%; height: 100%; }
+		</style>
+		<script type="importmap">
+			{ "imports": {
+				"three": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js"
+			} }
+		</script>
+	</head>
+	<body>
+		<script type="module">
+			// Ne e izpolzvan izkustven intelekt
+			import * as THREE from "three";
+
+			
+			var renderer = new THREE.WebGLRenderer();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.setAnimationLoop( drawFrame );
+			document.body.appendChild( renderer.domElement );
+
+			var scene = new THREE.Scene();
+			
+			var aspect = window.innerWidth/window.innerHeight;
+			var camera = new THREE.PerspectiveCamera( 30, aspect );
+			camera.position.set( 0, 20, 40 ); // 0 30 50
+			camera.lookAt( scene.position );
+
+			var farm = new THREE.Group();
+			scene.add( farm );
+
+			var material = new THREE.MeshPhongMaterial( {color: 'darkgreen'});
+			var geometry = new THREE.BoxGeometry( 30, 0.5, 30);
+			var grass = new THREE.Mesh( geometry, material );
+			farm.add( grass );
+
+			// hanging lamp
+			{
+				var hangingLamp = new THREE.Group()
+				var wallMaterial = new THREE.MeshPhongMaterial( {color: '#653300'});
+
+				var stickGeomtery = new THREE.BoxGeometry(1,0.2, 0.2)
+				var stick = new THREE.Mesh(stickGeomtery, wallMaterial)
+				hangingLamp.add(stick)
+
+				var stickGeomtery = new THREE.BoxGeometry(0.8,0.2, 0.2)
+				var stick = new THREE.Mesh(stickGeomtery, wallMaterial)
+				stick.position.set(-0.2, -0.25, 0)
+				stick.rotation.set(0, 0, Math.PI/4)
+				hangingLamp.add(stick)
+
+				var chainGeomtery = new THREE.BoxGeometry(0.05,0.2, 0.05)
+				var chain = new THREE.Mesh(chainGeomtery, roofMaterial)
+				chain.position.set(0.4, -0.2, 0)
+				hangingLamp.add(chain)
+
+				var lampGeomtery = new THREE.BoxGeometry(0.2,0.3, 0.2)
+				var lampMaterial = new THREE.MeshPhongMaterial({color: "yellow"})
+				var lamp = new THREE.Mesh(lampGeomtery, lampMaterial)
+				lamp.position.set(0.4, -0.45, 0)
+				var light = new THREE.PointLight( "yellow", 40 );
+				lamp.add( light );
+
+				hangingLamp.add(lamp)
+			}
+			
+
+			// shed
+			{
+				var shed = new THREE.Group();
+				farm.add( shed );
+
+				var material = new THREE.MeshPhongMaterial( {color: 'grey'});
+				var geometry = new THREE.BoxGeometry( 5, 1, 5);
+				var base = new THREE.Mesh( geometry, material );
+				base.position.set(4,0,0)
+				shed.add( base );
+
+				
+				var wallGeometry = new THREE.BoxGeometry( 4, 5, 0.2);
+
+				var wall = new THREE.Mesh( wallGeometry, wallMaterial );
+				wall.position.set(4,1,2)
+				shed.add( wall );
+
+				var wall = new THREE.Mesh( wallGeometry, wallMaterial );
+				wall.position.set(4,1,-2)
+				shed.add( wall );
+
+				var wall = new THREE.Mesh( wallGeometry, wallMaterial );
+				wall.position.set(6,1,0)
+				wall.rotation.set(0,Math.PI/2,0)
+				shed.add( wall );
+
+				var shortWallGeometry = new THREE.BoxGeometry( 1.5, 5, 0.2);
+
+				var wall = new THREE.Mesh( shortWallGeometry, wallMaterial );
+				wall.position.set(2,1,1.25)
+				wall.rotation.set(0,Math.PI/2,0)
+				shed.add( wall );
+
+				var wall = new THREE.Mesh( shortWallGeometry, wallMaterial );
+				wall.position.set(2,1, -1.25)
+				wall.rotation.set(0,Math.PI/2,0)
+				shed.add( wall );
+				
+				var topOfDoorWallGeometry = new THREE.BoxGeometry( 1, 1, 0.2);
+
+				var wall = new THREE.Mesh( topOfDoorWallGeometry, wallMaterial );
+				wall.position.set(2,3,0)
+				wall.rotation.set(0,Math.PI/2,0)
+				shed.add( wall );
+
+				var underRoofWallGeometry = new THREE.BoxGeometry( 2.8, 0.5, 0.2)
+
+				var wall = new THREE.Mesh( underRoofWallGeometry, wallMaterial );
+				wall.position.set(2,3.5,0)
+				wall.rotation.set(0,Math.PI/2,0)
+				shed.add( wall );
+
+				var wall = new THREE.Mesh( underRoofWallGeometry, wallMaterial );
+				wall.position.set(6,3.5,0)
+				wall.rotation.set(0,Math.PI/2,0)
+				shed.add( wall );
+
+				var shedRoofGeometry = new THREE.BoxGeometry(4.4, 0.1 , 3);
+				var roofMaterial = new THREE.MeshStandardMaterial( {color: 'grey', metalness: 1.0, roughness: 0.7});
+
+				var roof = new THREE.Mesh( shedRoofGeometry, roofMaterial );
+				roof.position.set(4,3.7,1.4)
+				roof.rotation.set(Math.PI/10, 0 ,0)
+				shed.add( roof );
+
+				var roof = new THREE.Mesh( shedRoofGeometry, roofMaterial );
+				roof.position.set(4,3.7,-1.4)
+				roof.rotation.set(-Math.PI/10, 0 ,0)
+				shed.add( roof );
+
+				var doorGeometry = new THREE.BoxGeometry( 1, 5, 0.1)
+				var wall = new THREE.Mesh( doorGeometry, roofMaterial );
+				wall.position.set(2.3, 0 ,-0.1)
+				wall.rotation.set(0, -Math.PI/3, 0)
+				shed.add( wall );
+
+				var hangingLampHayloft1 = hangingLamp.clone()
+				hangingLampHayloft1.position.set(1.5,3.5,0)
+				hangingLampHayloft1.rotation.set(0,Math.PI,0)
+				shed.add(hangingLampHayloft1)
+
+				//var light = new THREE.PointLight( 'white', 500 );
+				//light.position.set( 6, 10, 0 );
+				//shed.add( light );
+
+				var pitchfork = new THREE.Group();
+				shed.add( pitchfork );
+
+
+				var handleMaterial = new THREE.MeshPhongMaterial( {color: '#733342'});
+				var handleGeometry = new THREE.BoxGeometry( 0.1, 2, 0.1);
+
+				var handle = new THREE.Mesh( handleGeometry, handleMaterial );
+				pitchfork.add( handle );
+
+				var forkGeometry = new THREE.BoxGeometry( 0.1, 0.1	, 0.5);
+				var fork = new THREE.Mesh( forkGeometry, roofMaterial );
+				fork.position.set(0,-1,0);
+				pitchfork.add( fork );
+
+				var forkGeometry = new THREE.BoxGeometry( 0.1, 0.5	, 0.1);
+				var fork = new THREE.Mesh( forkGeometry, roofMaterial );
+				fork.position.set(0,-1.2,0.2);
+				pitchfork.add( fork );
+
+				var forkGeometry = new THREE.BoxGeometry( 0.1, 0.5	, 0.1);
+				var fork = new THREE.Mesh( forkGeometry, roofMaterial );
+				fork.position.set(0,-1.2, -0.2);
+				pitchfork.add( fork );
+
+				var forkGeometry = new THREE.BoxGeometry( 0.1, 0.5	, 0.1);
+				var fork = new THREE.Mesh( forkGeometry, roofMaterial );
+				fork.position.set(0,-1.2, 0);
+				pitchfork.add( fork );
+
+				pitchfork.position.set(1.7, 1.75, 1)
+				pitchfork.rotation.set(0, 0, -Math.PI/16)
+
+				var shovel = new THREE.Group();
+				shed.add( shovel );
+
+				var handleGeometry = new THREE.BoxGeometry( 0.1, 2, 0.1);
+
+				var handle = new THREE.Mesh( handleGeometry, handleMaterial );
+				shovel.add( handle );
+
+				var forkGeometry = new THREE.BoxGeometry( 0.5, 0.5	, 0.1);
+				var fork = new THREE.Mesh( forkGeometry, roofMaterial );
+				fork.position.set(0,-1.2, 0);
+				shovel.add( fork );
+
+				shovel.position.set(0,0.3,2)
+				shovel.rotation.set(Math.PI/2, 0, Math.PI/8)
+
+				
+			}
+			
+			// woodShed
+			{
+				
+				var woodShed = new THREE.Group();
+				farm.add( woodShed);
+
+				woodShed.position.set(-2 ,0, -6);
+
+				var material = new THREE.MeshPhongMaterial( {color: 'grey'});
+				var geometry = new THREE.BoxGeometry( 5, 1, 3);
+				var base = new THREE.Mesh( geometry, material );
+				woodShed.add( base );
+
+				var backPillarGeometry = new  THREE.BoxGeometry(0.25, 2.5, 0.25);
+				var pillar = new  THREE.Mesh( backPillarGeometry, wallMaterial );
+				pillar.position.set(0,1.5,-1);
+				woodShed.add( pillar );
+
+				var pillar = new  THREE.Mesh( backPillarGeometry, wallMaterial );
+				pillar.position.set(2,1.5,-1);
+				woodShed.add( pillar )
+
+				var pillar = new  THREE.Mesh( backPillarGeometry, wallMaterial );
+				pillar.position.set(-2,1.5,-1);
+				woodShed.add( pillar )
+
+				var frontPillarGeometry = new  THREE.BoxGeometry(0.25, 3.5, 0.25);
+
+				var pillar = new  THREE.Mesh( frontPillarGeometry, wallMaterial );
+				pillar.position.set(2,1.5,1);
+				woodShed.add( pillar )
+
+				var pillar = new  THREE.Mesh( frontPillarGeometry, wallMaterial );
+				pillar.position.set(-2,1.5,1);
+				woodShed.add( pillar )
+
+				var horizontalPillarGeometry = new  THREE.BoxGeometry(4, 0.25, 0.25);
+
+				var pillar = new  THREE.Mesh( horizontalPillarGeometry, wallMaterial );
+				pillar.position.set(0,3,1);
+				woodShed.add( pillar )
+
+				var pillar = new  THREE.Mesh( horizontalPillarGeometry, wallMaterial );
+				pillar.position.set(0,2.5,-1);
+				woodShed.add( pillar )
+
+				var shedRoofGeometry = new THREE.BoxGeometry(4.4, 0.1 , 3);
+
+				var roof = new THREE.Mesh( shedRoofGeometry, roofMaterial );
+				roof.position.set(0,3,0)
+				roof.rotation.set(-Math.PI/12, 0 ,0)
+				woodShed.add( roof );
+
+				var hangingLampHayloft1 = hangingLamp.clone()
+				hangingLampHayloft1.position.set(-2,3,1.5)
+				hangingLampHayloft1.rotation.set(0,-Math.PI/2,0)
+				woodShed.add(hangingLampHayloft1)
+
+
+				var woodStack = new THREE.Group();
+				woodShed.add(woodStack);
+				var woodRow1 = new THREE.Group();
+				woodStack.add(woodRow1);
+				// Wood
+				{
+					var wood = new THREE.Group()
+					woodRow1.add(wood);
+					wood.position.set(1,0.6,0);
+					wood.rotation.set(Math.PI/2, 0, 0);
+
+					var woodBarkGeometry = new THREE.CylinderGeometry( 0.1, 0.1, 0.5, 32 );
+					var woodBarkColor = new THREE.MeshBasicMaterial( { color: "#663300" } );
+					var woodBark = new THREE.Mesh( woodBarkGeometry, woodBarkColor );
+					wood.add( woodBark );
+
+					var woodInsideGeometry = new THREE.CylinderGeometry( 0.08, 0.08, 0.52, 32 );
+					var woodInsideColor = new THREE.MeshBasicMaterial( { color: "#cc9900" } );
+					var woodInside = new THREE.Mesh( woodInsideGeometry, woodInsideColor );
+					wood.add( woodInside );
+				}
+
+				var wood1 = wood.clone();
+				woodRow1.add(wood1);
+				wood1.position.set(1.2,0.6,0);
+
+				var wood2 = wood.clone();
+				woodRow1.add(wood2);
+				wood2.position.set(1.4,0.6,0);
+
+				var wood3 = wood.clone();
+				woodRow1.add(wood3);
+				wood3.position.set(1.6,0.6,0);
+
+				var wood4 = wood.clone();
+				woodRow1.add(wood4);
+				wood4.position.set(1.8,0.6,0);
+				
+				var woodRow2 = woodRow1.clone();
+				woodStack.add(woodRow2);
+				woodRow2.position.set(0,0.2,0);
+
+				var woodRow3 = woodRow1.clone();
+				woodStack.add(woodRow3);
+				woodRow3.position.set(0,0.4,0);
+			}
+
+			// pumpkin
+			{
+				var pumpkin = new THREE.Group();
+
+				var pumpkinBodyGeometry = new THREE.TorusGeometry( 0.1, 0.2, 16, 64 );
+				var material = new THREE.MeshPhongMaterial( { color: "#e38800" } );
+				var pumpkinBody = new THREE.Mesh( pumpkinBodyGeometry, material );
+				pumpkinBody.rotation.set(Math.PI/2, 0, 0);
+				pumpkin.add( pumpkinBody );
+
+				var pumpkinStemGeometry = new THREE.BoxGeometry( 0.02, 0.1, 0.02);
+				var pumpkinStemMaterial = new THREE.MeshPhongMaterial( { color: "#015c13" } );
+				var pumpkinStem = new THREE.Mesh( pumpkinStemGeometry, pumpkinStemMaterial );
+				pumpkin.add( pumpkinStem );
+				pumpkinStem.position.set(0,0.2,0);
+			}
+
+			// construction waggon
+			{
+				var constructionWaggon = new THREE.Group();
+				farm.add(constructionWaggon);
+				constructionWaggon.position.set(1,1,4);
+				constructionWaggon.rotation.set(0, -Math.PI/8, 0);
+
+
+				var constructionWaggonBodyGeometry = new THREE.CylinderGeometry( 0.5, 0.5, 1, 4, 1, false, 0, Math.PI);
+				var constructionWaggonBodyMaterial = new THREE.MeshPhongMaterial( { color: "#e67f7a", side: THREE.DoubleSide } );
+				var constructionWaggonBody = new THREE.Mesh( constructionWaggonBodyGeometry, constructionWaggonBodyMaterial );
+				constructionWaggonBody.rotation.set(Math.PI, 0, Math.PI/2);
+				constructionWaggon.add( constructionWaggonBody );
+
+				var barGeometry = new THREE.BoxGeometry( 1.3, 0.05, 0.05 );
+				var bar = new THREE.Mesh( barGeometry, roofMaterial );
+				bar.position.set(-0.15,-0.5,0.1);
+				constructionWaggon.add( bar );
+
+				var bar2 = bar.clone();
+				bar2.position.set(-0.15,-0.5,-0.1);
+				constructionWaggon.add( bar2 );
+
+				var wheelGeometry = new THREE.CylinderGeometry( 0.2, 0.2, 0.2, 32);
+				var wheelMaterial = new THREE.MeshPhongMaterial( { color: "black"} );
+				var wheel = new THREE.Mesh( wheelGeometry, wheelMaterial );
+				wheel.rotation.set(0, Math.PI/2, Math.PI/2);
+				wheel.position.set(-0.8, -0.5, 0);
+				constructionWaggon.add( wheel );
+
+				var constructionWaggonLeg = new THREE.Group();
+				constructionWaggon.add(constructionWaggonLeg);
+
+				var barGeometry = new THREE.BoxGeometry( 0.05, 0.2, 0.05 );
+				var bar = new THREE.Mesh( barGeometry, roofMaterial );
+				bar.position.set(0.4,-0.6,0.1);
+				constructionWaggonLeg.add( bar );
+
+				var barGeometry = new THREE.BoxGeometry( 0.05, 0.4, 0.05 );
+				var bar = new THREE.Mesh( barGeometry, roofMaterial );
+				bar.position.set(0.25,-0.6,0.1);
+				bar.rotation.set(0, 0, Math.PI/3);
+				constructionWaggonLeg.add( bar );
+
+				var constructionWaggonLeg2 = constructionWaggonLeg.clone();
+				constructionWaggonLeg2.position.set(0,0,-0.2);
+				constructionWaggon.add(constructionWaggonLeg2);
+
+				var handleGeometry = new THREE.BoxGeometry( 0.05, 0.8, 0.05 );
+				var handle = new THREE.Mesh( handleGeometry, roofMaterial );
+				handle.position.set(0.75,-0.25,-0.2);
+				handle.rotation.set(0, Math.PI/8, -Math.PI/4);
+				constructionWaggon.add( handle );
+
+				var handle2 = handle.clone();
+				constructionWaggon.add(handle2);
+				handle.position.set(0.75,-0.25,0.2);
+				handle.rotation.set(0, -Math.PI/8, -Math.PI/4);
+
+				var pumpkinConstructionWaggon1 = pumpkin.clone();
+				var pumpkinConstructionWaggon2 = pumpkin.clone();
+				constructionWaggon.add(pumpkinConstructionWaggon1);
+				constructionWaggon.add(pumpkinConstructionWaggon2);
+
+				pumpkinConstructionWaggon1.position.set(0.2, -0.1, 0);
+				pumpkinConstructionWaggon2.position.set(-0.23, -0.1, 0);
+				pumpkinConstructionWaggon2.rotation.set(0 , 0,  -Math.PI/4);
+
+			}
+
+			// horse waggon
+			{
+				var horseWaggon = new THREE.Group();
+				farm.add( horseWaggon);
+				horseWaggon.position.set(-5,0.8,-2);
+				horseWaggon.rotation.set(0,Math.PI/1.2,0);
+
+				var bodyBottomGeometry = new THREE.BoxGeometry(2, 0.1, 1);
+				var bodyBottom = new THREE.Mesh( bodyBottomGeometry, wallMaterial);
+				horseWaggon.add( bodyBottom);
+
+				var sideWallGeometry = new THREE.BoxGeometry(2, 0.4, 0.1);
+				var sideWall = new THREE.Mesh( sideWallGeometry, wallMaterial);
+				sideWall.position.set(0,0.25,-0.45);
+				horseWaggon.add( sideWall);
+
+				var sideWallGeometry = new THREE.BoxGeometry(2, 0.4, 0.1);
+				var sideWall = new THREE.Mesh( sideWallGeometry, wallMaterial);
+				sideWall.position.set(0,0.25,0.45);
+				horseWaggon.add( sideWall);
+
+				var backWallGeometry = new THREE.BoxGeometry(0.1, 0.4, 1);
+				var backWall = new THREE.Mesh( backWallGeometry, wallMaterial);
+				backWall.position.set(0.95,0.25,0);
+				horseWaggon.add( backWall);
+
+				var cushionGeometry = new THREE.BoxGeometry(0.4, 0.1, 0.8);
+				var cushionMAterial = new THREE.MeshPhongMaterial({color: "#4d015c"})
+				var cushion = new THREE.Mesh( cushionGeometry, cushionMAterial);
+				cushion.position.set(-0.8,0.1,0);
+				horseWaggon.add( cushion);
+
+				var centralBeamGeometry = new THREE.BoxGeometry(2, 0.2, 0.2);
+				var centralBeam = new THREE.Mesh( centralBeamGeometry, wallMaterial);
+				centralBeam.position.set(0,-0.15, 0);
+				horseWaggon.add( centralBeam);
+
+				var sideBeamGeometry = new THREE.BoxGeometry(0.1, 0.1, 1.2);
+				var sideBeam = new THREE.Mesh( sideBeamGeometry, wallMaterial);
+				sideBeam.position.set(0.7,-0.2, 0);
+				horseWaggon.add( sideBeam);
+
+				var sideBeamGeometry = new THREE.BoxGeometry(0.1, 0.1, 1.2);
+				var sideBeam = new THREE.Mesh( sideBeamGeometry, wallMaterial);
+				sideBeam.position.set(-0.7,-0.2, 0);
+				horseWaggon.add( sideBeam);
+				// wheel
+				{
+					var wheel = new THREE.Group();
+
+					var circleGeometry = new THREE.TorusGeometry( 0.3, 0.05, 12, 16 );
+					var torus = new THREE.Mesh( circleGeometry, wallMaterial );
+					wheel.add( torus );
+
+					var backWallGeometry = new THREE.BoxGeometry(0.08, 0.6, 0.08);
+					var wheelBeam = new THREE.Mesh( backWallGeometry, wallMaterial);
+					wheel.add( wheelBeam);
+
+					var backWallGeometry = new THREE.BoxGeometry(0.08, 0.6, 0.08);
+					var wheelBeam = new THREE.Mesh( backWallGeometry, wallMaterial);
+					wheelBeam.rotation.set(0, 0, Math.PI/2);
+					wheel.add( wheelBeam);
+
+					var backWallGeometry = new THREE.BoxGeometry(0.08, 0.6, 0.08);
+					var wheelBeam = new THREE.Mesh( backWallGeometry, wallMaterial);
+					wheelBeam.rotation.set(0, 0, Math.PI/4);
+					wheel.add( wheelBeam);
+
+					var backWallGeometry = new THREE.BoxGeometry(0.08, 0.6, 0.08);
+					var wheelBeam = new THREE.Mesh( backWallGeometry, wallMaterial);
+					wheelBeam.rotation.set(0, 0, -Math.PI/4);
+					wheel.add( wheelBeam);
+
+
+				}
+
+				var wheel1 = wheel.clone();
+				horseWaggon.add( wheel1);
+				wheel1.position.set(-0.7,-0.2, 0.6);
+
+				var wheel2 = wheel.clone();
+				horseWaggon.add( wheel2);
+				wheel2.position.set(-0.7,-0.2, -0.6);
+
+				var wheel3 = wheel.clone();
+				horseWaggon.add( wheel3);
+				wheel3.position.set(0.7,-0.2, 0.6);
+
+				var wheel4 = wheel.clone();
+				horseWaggon.add( wheel4);
+				wheel4.position.set(0.7,-0.2, -0.6);
+
+				var horseBeamGeometry = new THREE.BoxGeometry(1.4, 0.05, 0.05);
+				var horseBeam = new THREE.Mesh( horseBeamGeometry, wallMaterial);
+				horseBeam.position.set(-1.4, -0.2, -0.4);
+				horseBeam.rotation.set(0, 0, Math.PI/8);
+				horseWaggon.add( horseBeam);
+
+				var horseBeamGeometry = new THREE.BoxGeometry(1.4, 0.05, 0.05);
+				var horseBeam = new THREE.Mesh( horseBeamGeometry, wallMaterial);
+				horseBeam.position.set(-1.4, -0.2, 0.4);
+				horseBeam.rotation.set(0, 0, Math.PI/8);
+				horseWaggon.add( horseBeam);
+
+				var horseBeamGeometry = new THREE.BoxGeometry(0.05, 0.05, 0.8);
+				var horseBeam = new THREE.Mesh( horseBeamGeometry, wallMaterial);
+				horseBeam.position.set(-1.8, -0.37, 0);
+				horseBeam.rotation.set(0, 0, Math.PI/8);
+				horseWaggon.add( horseBeam);
+
+				var pumpkinInHorseWaggon1 = pumpkin.clone();
+				horseWaggon.add(pumpkinInHorseWaggon1);
+				pumpkinInHorseWaggon1.position.set(0.6,0.25,0.1);
+
+				var pumpkinInHorseWaggon2 = pumpkin.clone();
+				horseWaggon.add(pumpkinInHorseWaggon2);
+				pumpkinInHorseWaggon2.position.set(-0.3,0.25,-0.1);
+
+				var pumpkinInHorseWaggon3 = pumpkin.clone();
+				horseWaggon.add(pumpkinInHorseWaggon3);
+				pumpkinInHorseWaggon3.position.set( 0.1,0.3, 0.15);
+				pumpkinInHorseWaggon3.rotation.set(0,-Math.PI/4, Math.PI/3);
+			}
+			
+
+
+			// hayloft
+			{
+				var hayloft = new THREE.Group();
+				farm.add( hayloft);
+				hayloft.position.set(-8,0,8)
+				hayloft.rotation.set(0, Math.PI/4,0);
+
+				var foundationGeometry = new THREE.BoxGeometry(7, 1, 7);
+				var foundationMaterial = new THREE.MeshPhongMaterial( {color: 'grey'});
+				var foundation = new THREE.Mesh(foundationGeometry, foundationMaterial);
+				hayloft.add(foundation);
+
+				var hayloftWallGeometry = new THREE.BoxGeometry(7, 5, 0.2)
+				var hayloftWall = new THREE.Mesh(hayloftWallGeometry, wallMaterial);
+				hayloftWall.position.set(0,3,-3.4);
+				hayloft.add(hayloftWall);
+
+				var hayloftWallSide = hayloftWall.clone();
+				hayloftWallSide.position.set(0,3,3.4);
+				hayloft.add(hayloftWallSide);
+
+				var hayloftWallBack = hayloftWall.clone();
+				hayloftWallBack.position.set(-3.4,3,0);
+				
+				hayloftWallBack.rotation.set(0,Math.PI/2, 0);
+				hayloft.add(hayloftWallBack);
+
+				var hayloftWallGeometry = new THREE.BoxGeometry(0.2, 5, 3)
+				var hayloftWall = new THREE.Mesh(hayloftWallGeometry, wallMaterial);
+				hayloftWall.position.set(3.4,3,2 );
+				hayloft.add(hayloftWall);
+
+				var hayloftWallGeometry = new THREE.BoxGeometry(0.2, 5, 3)
+				var hayloftWall = new THREE.Mesh(hayloftWallGeometry, wallMaterial);
+				hayloftWall.position.set(3.4,3, -2 );
+				hayloft.add(hayloftWall);
+
+				var hayloftWallGeometry = new THREE.BoxGeometry(0.2, 2, 1)
+				var hayloftWall = new THREE.Mesh(hayloftWallGeometry, wallMaterial);
+				hayloftWall.position.set(3.4,3.5, 0 );
+				hayloft.add(hayloftWall);
+
+				var hayloftWallGeometry = new THREE.BoxGeometry(0.7, 0.1, 1.2)
+				var hayloftWall = new THREE.Mesh(hayloftWallGeometry, wallMaterial);
+				hayloftWall.position.set(3.6,5.6, 0 );
+				hayloftWall.rotation.set(0,0, -Math.PI/6 );
+				hayloft.add(hayloftWall);
+
+				var topWallHayloftGeometry = new THREE.CylinderGeometry( 3.5, 3.5, 7, 32, 1, false, 0, Math.PI )
+				var topWallHayloft = new THREE.Mesh(topWallHayloftGeometry, wallMaterial);
+				topWallHayloft.position.set(0,5.5,0)
+				topWallHayloft.rotation.set(0, 0,  Math.PI/2)
+				hayloft.add(topWallHayloft)
+
+
+				var roofGeometry = new THREE.CylinderGeometry( 3.51, 3.51, 7.4, 32, 1, true, 0, Math.PI )
+				var hayloftRoofMaterial = new THREE.MeshPhongMaterial({color: "yellow", side: THREE.DoubleSide})
+				var hayloftRoof = new THREE.Mesh(roofGeometry, hayloftRoofMaterial);
+				hayloftRoof.position.set(0,5.5,0)
+				hayloftRoof.rotation.set(0, 0,  Math.PI/2)
+				hayloft.add(hayloftRoof)
+
+				var door = new THREE.Mesh(doorGeometry, roofMaterial);
+				door.position.set(3.4,0,0,);
+				door.rotation.set(0, Math.PI/2, 0)
+				hayloft.add(door);
+
+				var hangingLampHayloft1 = hangingLamp.clone()
+				hangingLampHayloft1.position.set(4,3.5,2)
+				hayloft.add(hangingLampHayloft1)
+
+				var hangingLampHayloft1 = hangingLamp.clone()
+				hangingLampHayloft1.position.set(4,3.5,-2)
+				hayloft.add(hangingLampHayloft1)
+
+			}
+
+
+
+
+
+			var light = new THREE.PointLight( 'white', 1000 );
+			light.position.set( 0, 20, 30 );
+			scene.add( light );
+			
+			function drawFrame( t )
+			{
+				farm.rotation.y = t/2000;
+				renderer.render( scene, camera );
+			}
+			
+		</script>
+	</body>
+</html>
