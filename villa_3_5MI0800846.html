@@ -1,0 +1,910 @@
+﻿<!DOCTYPE html>
+
+<!-- Ivan Kaloyanov Matev -->
+
+<html>
+
+<head>
+	<style>
+		body {
+			margin: 0;
+		}
+
+		canvas {
+			width: 100%;
+			height: 100%
+		}
+	</style>
+	<script type="importmap">
+			{ "imports": {
+				"three": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.webgpu.min.js",
+				"three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.webgpu.min.js",
+				"three/tsl": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.tsl.min.js",
+				"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/",
+				"villa": "https://boytchev.github.io/CourseOKG/villa/villa.js",
+				"csg/": "https://cdn.jsdelivr.net/gh/looeee/threejs-csg@main/src/CSG/"
+			} }
+		</script>
+</head>
+
+<body>
+	<script type="module">
+		import * as THREE from "three";
+		import { villa, renderer, scene, camera, light, controls } from "villa";
+		import { CSG } from "csg/CSG.js";
+		// NE E POLZVAN II
+		villa('5MI0800846');
+
+		var house = new THREE.Group();
+		scene.add(house);
+
+		// Walls
+		{
+			var walls = new THREE.Group();
+			house.add(walls);
+
+			const wallHeight = 3;
+			const wallWidth = 0.2;
+			var wallMaterial = new THREE.MeshLambertMaterial({ color: 'bisque' });
+
+			function createWall(length, position, rotation = 0) {
+				var wallGeometry = new THREE.BoxGeometry(wallWidth, wallHeight, length);
+				var wall = new THREE.Mesh(wallGeometry, wallMaterial);
+				wall.position.set(position.x, wallHeight / 2, position.z);
+				wall.rotation.set(0, rotation, 0); // yRotation
+				wall.receiveShadow = true;
+				wall.castShadow = true;
+				return wall;
+			}
+
+			const doorCutOutHeight = 2;
+			const doorCutOutWidth = 0.4;
+			const doorCutOuLength = 1;
+			var cutoutMaterial = new THREE.MeshLambertMaterial({ color: 'crimson' });
+
+			function createDoorCutOut(position, rotation = 0) {
+				var doorCutOutGeometry = new THREE.BoxGeometry(doorCutOutWidth, doorCutOutHeight, doorCutOuLength);
+				var doorCutOut = new THREE.Mesh(doorCutOutGeometry, cutoutMaterial);
+				doorCutOut.position.set(position.x, doorCutOutHeight / 2, position.z);
+				doorCutOut.rotation.set(0, rotation, 0); // yRotation
+				doorCutOut.receiveShadow = true;
+				doorCutOut.castShadow = true;
+				return doorCutOut;
+			}
+
+			const windowCutOutHeight = 1.6;
+			const windowCutOutWidth = 0.4;
+			const windowCutOuLength = 1;
+			const windowFromGround = 0.8;
+
+			function createWindowsCutOut(count, position, rotation = 0) {
+				var windowCutOutGeometry = new THREE.BoxGeometry(windowCutOutWidth, windowCutOutHeight, windowCutOuLength * count);
+				var windowCutOut = new THREE.Mesh(windowCutOutGeometry, cutoutMaterial);
+				windowCutOut.position.set(position.x, (windowCutOutHeight / 2) + windowFromGround, position.z);
+				windowCutOut.rotation.set(0, rotation, 0); // yRotation
+				windowCutOut.receiveShadow = true;
+				windowCutOut.castShadow = true;
+				return windowCutOut;
+			}
+
+			function cutWall(wall, objectsToCut) {
+				for (const cutObj of objectsToCut) {
+					var csg = new CSG();
+					csg.subtract([wall, cutObj]);
+
+					var newWall = csg.toMesh();
+					newWall.material = wallMaterial;
+					newWall.receiveShadow = true;
+					newWall.castShadow = true;
+					wall = newWall;
+				}
+				walls.add(wall);
+			}
+
+			// window template
+			{
+				var window = new THREE.Group();
+
+				var windowFrameMaterial = new THREE.MeshLambertMaterial({ color: 'white' });
+				var windowFrameThickness = 0.1;
+				var windowFrameWidth = wallWidth + 0.1;
+
+				var windowPaneHeight = windowCutOutHeight - 2 * windowFrameThickness;
+				var windowPaneLength = windowCutOuLength - 2 * windowFrameThickness;
+
+				var windowFrameBox = new THREE.Mesh(new THREE.BoxGeometry(windowFrameWidth, windowCutOutHeight, windowCutOuLength), windowFrameMaterial)
+				var windowFrameCut = new THREE.Mesh(new THREE.BoxGeometry(windowFrameWidth, windowPaneHeight, windowPaneLength), cutoutMaterial)
+
+				var csg = new CSG();
+				csg.subtract([windowFrameBox, windowFrameCut]);
+
+				var windowFrame = csg.toMesh();
+				windowFrame.material = windowFrameMaterial;
+				windowFrame.receiveShadow = true;
+				windowFrame.castShadow = true;
+				window.add(windowFrame);
+
+				var windowPaneMaterial = new THREE.MeshLambertMaterial({ color: 'cyan', transparent: true, opacity: 0.3 });
+				var windowPaneWidth = 0.1;
+
+				var windowPaneGeometry = new THREE.BoxGeometry(windowPaneWidth, windowPaneHeight, windowPaneLength);
+				var windowPane = new THREE.Mesh(windowPaneGeometry, windowPaneMaterial)
+				window.add(windowPane)
+			}
+
+			function createWindows(count, position, rotation = 0) {
+				var windowGroup = new THREE.Group();
+
+				for (var i = 0; i < count; i++) {
+					var newWindow = window.clone();
+					newWindow.position.set(0, 0, i * windowCutOuLength);
+					newWindow.receiveShadow = true;
+					newWindow.castShadow = true;
+					windowGroup.add(newWindow);
+				}
+
+				windowGroup.position.set(position.x, (windowCutOutHeight / 2) + windowFromGround, position.z);
+				windowGroup.rotation.set(0, rotation, 0);
+				walls.add(windowGroup);
+			}
+
+			// door Template
+			{
+				var door = new THREE.Group();
+
+				var doorFrameMaterial = new THREE.MeshLambertMaterial({ color: 'white' });
+				var doorFrameThickness = 0.1;
+				var doorFrameWidth = wallWidth + 0.1;
+
+				var doorHeight = doorCutOutHeight - doorFrameThickness;
+				var doorLength = doorCutOuLength - 2 * doorFrameThickness;
+
+				var doorFrameBox = new THREE.Mesh(new THREE.BoxGeometry(doorFrameWidth, doorCutOutHeight, doorCutOuLength), windowFrameMaterial)
+				var doorFrameCut = new THREE.Mesh(new THREE.BoxGeometry(doorFrameWidth, doorHeight, doorLength), cutoutMaterial)
+				doorFrameCut.position.set(0, -doorFrameThickness / 2, 0);
+
+				var csg = new CSG();
+				csg.subtract([doorFrameBox, doorFrameCut]);
+
+				var doorFrame = csg.toMesh();
+				doorFrame.material = windowFrameMaterial;
+				doorFrame.receiveShadow = true;
+				doorFrame.castShadow = true;
+				door.add(doorFrame);
+
+				var doorWidth = 0.1;
+				var doorMaterial = new THREE.MeshLambertMaterial({ color: 'teal' });
+				var doorGeometry = new THREE.BoxGeometry(doorWidth, doorHeight, doorLength);
+				var doorWood = new THREE.Mesh(doorGeometry, doorMaterial)
+				doorWood.position.set(0, -doorFrameThickness / 2, 0);
+				doorWood.receiveShadow = true;
+				doorWood.castShadow = true;
+				door.add(doorWood)
+
+				var handleFromGround = 0.8;
+				var handleMaterial = new THREE.MeshLambertMaterial({ color: 'goldenrod' });
+
+				var handleGeometry = new THREE.SphereGeometry(0.04, 32, 16);
+				var handle = new THREE.Mesh(handleGeometry, handleMaterial);
+				handle.receiveShadow = true;
+				handle.castShadow = true;
+				handle.position.set(0.08, -0.1, -0.3);
+				door.add(handle)
+
+				var backHandle = handle.clone();
+				backHandle.position.set(-0.08, -0.1, -0.3);
+				door.add(backHandle)
+
+			}
+
+			function createDoor(position, rotation = 0) {
+				var doorClone = door.clone();
+				doorClone.position.set(position.x, doorCutOutHeight / 2, position.z);
+				doorClone.rotation.set(0, rotation, 0); // yRotation
+				walls.add(doorClone);
+			}
+
+			// Outer walls
+			{
+				var wall = createWall(6, { x: 6.9, z: 0 });
+				var doorCutOut = createDoorCutOut({ x: 6.9, z: 2 });
+				cutWall(wall, [doorCutOut]);
+				createDoor({ x: 6.9, z: 2 });
+
+				walls.add(createWall(2, { x: 6, z: -2.9 }, Math.PI / 2));
+				walls.add(createWall(6, { x: 4.9, z: -5.8 }));
+				walls.add(createWall(6, { x: 2, z: -8.9 }, Math.PI / 2));
+				walls.add(createWall(6, { x: -0.9, z: -5.8 }));
+
+
+				var wall = createWall(3, { x: -2.5, z: -2.9 }, Math.PI / 2);
+				var windowCutOut1 = createWindowsCutOut(1, { x: -3, z: -2.9 }, Math.PI / 2);
+				cutWall(wall, [windowCutOut1]);
+				createWindows(1, { x: -3, z: -2.9 }, Math.PI / 2)
+
+
+				var wall = createWall(6, { x: -3.9, z: 0 });
+				var windowCutOut1 = createWindowsCutOut(2, { x: -3.9, z: 1.5 });
+				var windowCutOut2 = createWindowsCutOut(2, { x: -3.9, z: -1.5 });
+				cutWall(wall, [windowCutOut1, windowCutOut2]);
+				createWindows(2, { x: -3.9, z: 1 })
+				createWindows(2, { x: -3.9, z: -2 })
+
+				var wall = createWall(3, { x: -2.5, z: 2.9 }, Math.PI / 2);
+				var windowCutOut1 = createWindowsCutOut(2, { x: -2.5, z: 2.9 }, Math.PI / 2);
+				cutWall(wall, [windowCutOut1]);
+				createWindows(2, { x: -3, z: 2.9 }, Math.PI / 2)
+
+				var wall = createWall(2.2, { x: -0.9, z: 3.9 });
+				var windowCutOut1 = createWindowsCutOut(1, { x: -0.9, z: 3.9 });
+				cutWall(wall, [windowCutOut1]);
+				createWindows(1, { x: -0.9, z: 3.9 })
+
+				var wall = createWall(6, { x: 2, z: 4.9 }, Math.PI / 2);
+				var windowCutOut1 = createWindowsCutOut(3, { x: 3, z: 4.9 }, Math.PI / 2);
+				cutWall(wall, [windowCutOut1]);
+				createWindows(3, { x: 2, z: 4.9 }, Math.PI / 2)
+
+				walls.add(createWall(2.2, { x: 4.9, z: 3.9 }));
+
+				var wall = createWall(2, { x: 5.9, z: 2.9 }, Math.PI / 2);
+				var windowCutOut1 = createWindowsCutOut(1, { x: 5.9, z: 2.9 }, Math.PI / 2);
+				cutWall(wall, [windowCutOut1]);
+				createWindows(1, { x: 5.9, z: 2.9 }, Math.PI / 2)
+			}
+
+			// Inner walls
+			{
+				// Bath
+				walls.add(createWall(2, { x: 3.9, z: -4 }, Math.PI / 2));
+				walls.add(createWall(2, { x: 3, z: -5.1 }));
+
+				var wall = createWall(Math.sqrt(2), { x: 2.53, z: -6.53 }, Math.PI / 4);
+				var doorCutOut = createDoorCutOut({ x: 2.53, z: -6.53 }, Math.PI / 4);
+				cutWall(wall, [doorCutOut]);
+				createDoor({ x: 2.53, z: -6.53 }, Math.PI / 4);
+
+				walls.add(createWall(1.2, { x: 1.5, z: -7 }, Math.PI / 2));
+				walls.add(createWall(2, { x: 1, z: -8 }));
+
+				// Laundry
+				walls.add(createWall(1, { x: -0.4, z: -5 }, Math.PI / 2));
+				walls.add(createWall(1, { x: 0, z: -5.6 }));
+
+				var wall = createWall(Math.sqrt(2), { x: 0.47, z: -6.53 }, -Math.PI / 4);
+				var doorCutOut = createDoorCutOut({ x: 0.47, z: -6.53 }, -Math.PI / 4);
+				cutWall(wall, [doorCutOut]);
+				createDoor({ x: 0.47, z: -6.53 }, -Math.PI / 4);
+
+				// Bedrooms
+				walls.add(createWall(5, { x: -1.5, z: 0 }, Math.PI / 2));
+
+
+				// Bedroom door 2
+				var wall = createWall(9, { x: 1, z: 0.4 });
+				var doorCutOut = createDoorCutOut({ x: 1, z: 1 });
+				cutWall(wall, [doorCutOut]);
+				createDoor({ x: 1, z: 1 });
+
+
+				// Bedroom door 1
+				var wall = createWall(Math.sqrt(2), { x: 0.53, z: -4.53 }, Math.PI / 4);
+				var doorCutOut = createDoorCutOut({ x: 0.53, z: -4.53 }, Math.PI / 4);
+				cutWall(wall, [doorCutOut]);
+				createDoor({ x: 0.53, z: -4.53 }, Math.PI / 4);
+			}
+
+
+		}
+
+
+		// Floor
+		{
+			var floor = new THREE.Group();
+			scene.add(floor);
+			var floorMaterial = new THREE.MeshLambertMaterial({ color: 'rosybrown', transparent: true, opacity: 1 });
+			var floorThickness = 0.02;
+			floor.position.set(0, floorThickness / 2, 0);
+
+			var hardwood = new THREE.Mesh(new THREE.BoxGeometry(10.8, floorThickness, 6), floorMaterial);
+			hardwood.position.set(1.4, 0, 0)
+			hardwood.receiveShadow = true;
+			hardwood.castShadow = true;
+			floor.add(hardwood)
+
+			var hardwood = new THREE.Mesh(new THREE.BoxGeometry(6, floorThickness, 6), floorMaterial);
+			hardwood.position.set(2, 0, -6)
+			hardwood.receiveShadow = true;
+			hardwood.castShadow = true;
+			floor.add(hardwood)
+
+			var hardwood = new THREE.Mesh(new THREE.BoxGeometry(6, floorThickness, 2), floorMaterial);
+			hardwood.position.set(2, 0, 4)
+			hardwood.receiveShadow = true;
+			hardwood.castShadow = true;
+			floor.add(hardwood)
+
+			//Rugs
+			var rugMaterial = new THREE.MeshLambertMaterial({ color: 'seashell' });
+			var rug = new THREE.Mesh(new THREE.BoxGeometry(3, 0.1, 2), rugMaterial);
+			rug.position.set(-2, 0, -1.5)
+			rug.receiveShadow = true;
+			rug.castShadow = true;
+			floor.add(rug)
+
+			var rug = new THREE.Mesh(new THREE.BoxGeometry(3, 0.1, 2.4), rugMaterial);
+			rug.position.set(-2, 0, 1.45)
+			rug.receiveShadow = true;
+			rug.castShadow = true;
+			floor.add(rug)
+
+			var rug = new THREE.Mesh(new THREE.BoxGeometry(3, 0.1, 4), rugMaterial);
+			rug.position.set(3, 0, 2.5)
+			rug.receiveShadow = true;
+			rug.castShadow = true;
+			floor.add(rug)
+
+			var rug = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.1, 16), rugMaterial);
+			rug.position.set(1.5, 0, -5.5)
+			rug.receiveShadow = true;
+			rug.castShadow = true;
+			floor.add(rug)
+		}
+
+
+		// Baby bed
+		{
+			var babyBed = new THREE.Group();
+			scene.add(babyBed);
+
+
+
+			var bedFrame = new THREE.Group();
+			var bedFrameMaterial = new THREE.MeshLambertMaterial({ color: 'burlywood' });
+			babyBed.add(bedFrame);
+
+			// accessories
+			{
+				var babyMattressWidth = 0.6;
+				var babyMattressLength = 1.2;
+				var babyMattressThickness = 0.2;
+
+				var linenMaterial = new THREE.MeshLambertMaterial({ color: 'linen' });
+
+				var babyMattressGeometry = new THREE.BoxGeometry(babyMattressWidth, babyMattressThickness, babyMattressLength);
+				var babyMattress = new THREE.Mesh(babyMattressGeometry, linenMaterial);
+				babyMattress.receiveShadow = true;
+				babyMattress.castShadow = true;
+				babyMattress.position.set(0, -0.1, 0);
+				babyBed.add(babyMattress);
+
+				var pillowGeometry = new THREE.BoxGeometry(0.2, 0.1, 0.15);
+				var pillow = new THREE.Mesh(pillowGeometry, linenMaterial);
+				pillow.receiveShadow = true;
+				pillow.castShadow = true;
+				pillow.position.set(0.1, 0, 0.5);
+				babyBed.add(pillow);
+
+				var pillow2 = pillow.clone();
+				pillow.position.set(-0.1, 0, 0.45);
+				pillow.rotation.set(0, Math.PI / 4, 0);
+				babyBed.add(pillow2);
+
+
+				var blanketMaterial = new THREE.MeshLambertMaterial({ color: 'powderblue' });
+
+				var blanketGeometry = new THREE.BoxGeometry(0.55, 0.05, 0.88);
+				var blanket = new THREE.Mesh(blanketGeometry, blanketMaterial);
+				blanket.receiveShadow = true;
+				blanket.castShadow = true;
+				blanket.position.set(0, 0, -0.1);
+				babyBed.add(blanket);
+
+			}
+
+			var bedBoardWidth = babyMattressWidth + 0.1;
+			var bedBoardLength = babyMattressLength + 0.1;
+
+			var bedBoardGeometry = new THREE.BoxGeometry(bedBoardWidth, 0.05, bedBoardLength);
+			var bedBoard = new THREE.Mesh(bedBoardGeometry, bedFrameMaterial);
+			bedBoard.receiveShadow = true;
+			bedBoard.castShadow = true;
+			bedBoard.position.set(0, -0.2, 0);
+			bedFrame.add(bedBoard);
+
+			// Leg
+			{
+				var bedLeg = new THREE.Group();
+
+				var legHeight = 1.2;
+
+				var legRodGeometry = new THREE.CylinderGeometry(0.04, 0.04, legHeight, 16);
+				var legRod = new THREE.Mesh(legRodGeometry, bedFrameMaterial);
+				legRod.receiveShadow = true;
+				legRod.castShadow = true;
+				bedLeg.add(legRod);
+
+				var legRodBottomGeometry = new THREE.CylinderGeometry(0.06, 0.06, 0.2, 16);
+				var legRodBottom = new THREE.Mesh(legRodBottomGeometry, bedFrameMaterial);
+				legRodBottom.position.set(0, -legHeight / 2, 0)
+				legRodBottom.receiveShadow = true;
+				legRodBottom.castShadow = true;
+				bedLeg.add(legRodBottom);
+
+				var legRodTopGeometry = new THREE.SphereGeometry(0.06);
+				var legRodTop = new THREE.Mesh(legRodTopGeometry, bedFrameMaterial);
+				legRodTop.position.set(0, legHeight / 2, 0)
+				legRodTop.receiveShadow = true;
+				legRodTop.castShadow = true;
+				bedLeg.add(legRodTop);
+			}
+
+			var bedLeg1 = bedLeg.clone();
+			bedLeg1.position.set(bedBoardWidth / 2, 0, bedBoardLength / 2)
+			bedFrame.add(bedLeg1);
+
+			var bedLeg2 = bedLeg.clone();
+			bedLeg2.position.set(-bedBoardWidth / 2, 0, bedBoardLength / 2)
+			bedFrame.add(bedLeg2);
+
+			var bedLeg3 = bedLeg.clone();
+			bedLeg3.position.set(bedBoardWidth / 2, 0, -bedBoardLength / 2)
+			bedFrame.add(bedLeg3);
+
+			var bedLeg4 = bedLeg.clone();
+			bedLeg4.position.set(-bedBoardWidth / 2, 0, -bedBoardLength / 2)
+			bedFrame.add(bedLeg4);
+
+			// side boards
+			{
+				function addSideBeam(length, position, rotation) {
+					var sideBeamGeometry = new THREE.CylinderGeometry(0.04, 0.04, length, 16);
+					var sideBeam = new THREE.Mesh(sideBeamGeometry, bedFrameMaterial);
+					sideBeam.position.set(position.x, position.y, position.z);
+					sideBeam.rotation.set(0, rotation.y, rotation.z)
+					sideBeam.receiveShadow = true;
+					sideBeam.castShadow = true;
+					bedFrame.add(sideBeam);
+				}
+
+				addSideBeam(bedBoardLength, { x: bedBoardWidth / 2, y: -0.3, z: 0 }, { x: 0, y: Math.PI / 2, z: Math.PI / 2 })
+				addSideBeam(bedBoardLength, { x: bedBoardWidth / 2, y: 0.3, z: 0 }, { x: 0, y: Math.PI / 2, z: Math.PI / 2 })
+				addSideBeam(bedBoardLength, { x: -bedBoardWidth / 2, y: -0.3, z: 0 }, { x: 0, y: Math.PI / 2, z: Math.PI / 2 })
+				addSideBeam(bedBoardLength, { x: -bedBoardWidth / 2, y: 0.3, z: 0 }, { x: 0, y: Math.PI / 2, z: Math.PI / 2 })
+
+				addSideBeam(bedBoardWidth, { x: 0, y: -0.3, z: bedBoardLength / 2 }, { x: 0, y: 0, z: Math.PI / 2 })
+				addSideBeam(bedBoardWidth, { x: 0, y: 0.3, z: bedBoardLength / 2 }, { x: 0, y: 0, z: Math.PI / 2 })
+				addSideBeam(bedBoardWidth, { x: 0, y: -0.3, z: -bedBoardLength / 2 }, { x: 0, y: 0, z: Math.PI / 2 })
+				addSideBeam(bedBoardWidth, { x: 0, y: 0.3, z: -bedBoardLength / 2 }, { x: 0, y: 0, z: Math.PI / 2 })
+
+				var sideBarHeight = 0.6;
+				var sideBarThickness = 0.02;
+
+				function createSideBar(position) {
+					var sideBarGeometry = new THREE.CylinderGeometry(sideBarThickness, sideBarThickness, sideBarHeight, 16);
+					var sideBar = new THREE.Mesh(sideBarGeometry, bedFrameMaterial);
+					sideBar.position.set(position.x, position.y, position.z);
+					sideBar.receiveShadow = true;
+					sideBar.castShadow = true;
+					bedFrame.add(sideBar);
+				}
+
+				function addSideBars(startPoint, endPoint, gap, XorZ, offset) { // XorZ is a bool which decides the direction of the bars
+					for (; startPoint <= endPoint; startPoint = startPoint + gap) {
+						if (XorZ) {
+							createSideBar({ x: startPoint, y: 0, z: offset })
+						} else {
+							createSideBar({ x: offset, y: 0, z: startPoint })
+						}
+
+					}
+				}
+
+				addSideBars(-bedBoardWidth / 2, bedBoardWidth / 2, 0.1, true, bedBoardLength / 2);
+				addSideBars(-bedBoardWidth / 2, bedBoardWidth / 2, 0.1, true, -bedBoardLength / 2);
+				addSideBars(-bedBoardLength / 2, bedBoardLength / 2, 0.1, false, bedBoardWidth / 2);
+				addSideBars(-bedBoardLength / 2, bedBoardLength / 2, 0.1, false, -bedBoardWidth / 2);
+				//createSideBar({x: 0, y: 0, z: bedBoardLength/2})
+
+			}
+
+
+			babyBed.position.set(-3, legHeight / 2, -2.2);
+			babyBed.rotation.set(0, -Math.PI / 2, 0);
+		}
+
+		// books
+
+		var bookColors = ["crimson", "greenyellow", "lightseagreen", "mediumorchid", "navy", "orange"];
+
+		function createBook(coverDimensions) {
+			var book = new THREE.Group();
+
+			var colorIndex = THREE.MathUtils.randInt(0, bookColors.length - 1)
+			var bookMaterial = new THREE.MeshLambertMaterial({ color: bookColors[colorIndex] });
+			var coverBox = new THREE.Mesh(new THREE.BoxGeometry(coverDimensions.x, coverDimensions.y, coverDimensions.z), bookMaterial)
+
+
+			var carve = new THREE.Mesh(new THREE.BoxGeometry(coverDimensions.x + 0.02, coverDimensions.y - 0.02, coverDimensions.z - 0.01), cutoutMaterial)
+			carve.position.set(0, 0, -0.01);
+
+			var pagesMaterial = new THREE.MeshLambertMaterial({ color: "white" });
+			var pages = new THREE.Mesh(new THREE.BoxGeometry(coverDimensions.x - 0.01, coverDimensions.y - 0.02, coverDimensions.z - 0.02), pagesMaterial)
+			carve.position.set(0, 0, -0.01);
+			book.add(pages)
+
+			var csg = new CSG();
+			csg.subtract([coverBox, carve]);
+			var cover = csg.toMesh();
+			cover.material = bookMaterial;
+			cover.receiveShadow = true;
+			cover.castShadow = true;
+			book.add(cover);
+
+			return book;
+		}
+
+
+		function addStackedBooks(count, position, areStacked) { // areStacked - if true they are stacked else they are standing
+			var books = new THREE.Group();
+			books.position.set(position.x, position.y, position.z);
+
+			var offset = 0;
+			for (var i = 0; i < count; i++) {
+				var bookHeight = THREE.MathUtils.randFloat(0.20, 0.32);
+				var bookThickness = THREE.MathUtils.randFloat(0.03, 0.07);
+				var bookWidth = THREE.MathUtils.randFloat(0.12, 0.23);
+
+				var newBook = createBook({ x: bookHeight, y: bookThickness, z: bookWidth });
+
+				if (areStacked) {
+					newBook.position.set(0, offset + bookThickness / 2, 0);
+				} else {
+					newBook.rotation.z = Math.PI / 2;
+					newBook.position.set(offset + bookThickness / 2, bookHeight / 2, 0);
+				}
+				offset += bookThickness;
+				books.add(newBook);
+			}
+			return books;
+		}
+		//scene.add(addStackedBooks(7, { x: 0, y: 4, z: 0 }, true))
+		//scene.add(addStackedBooks(7, { x: 0, y: 4, z: 1 }, false))
+		//createBook({ x: 0.2, y: 0.05, z: 0.15 })
+
+
+		//Baby Shelves
+		{
+			var babyShelves = new THREE.Group();
+			scene.add(babyShelves);
+			babyShelves.position.set(-1.6, 1.8, -2.65);
+
+			var shelveThickness = 0.1;
+			var shelveWidth = 0.3;
+
+			var shelve1Box = new THREE.Mesh(new THREE.BoxGeometry(1, 0.6, shelveWidth), bedFrameMaterial);
+			var carveShelve1 = new THREE.Mesh(new THREE.BoxGeometry(1 - shelveThickness, 0.6 - shelveThickness, 0.4), cutoutMaterial);
+
+			var shelve2Box = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, shelveWidth), bedFrameMaterial);
+			shelve2Box.position.set(-0.4, 0.3, 0)
+			var carveShelve2 = new THREE.Mesh(new THREE.BoxGeometry(0.6 - shelveThickness, 0.4 - shelveThickness, 0.4), cutoutMaterial);
+			carveShelve2.position.set(-0.4, 0.3, 0)
+
+			var shelve3Box = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, shelveWidth), bedFrameMaterial);
+			shelve3Box.position.set(0.4, -0.3, 0)
+			var carveShelve3 = new THREE.Mesh(new THREE.BoxGeometry(0.6 - shelveThickness, 0.4 - shelveThickness, 0.4), cutoutMaterial);
+			carveShelve3.position.set(0.4, -0.3, 0)
+
+			var csg = new CSG();
+			csg.subtract([shelve1Box, carveShelve1, shelve2Box, shelve3Box]);
+			var shelve1 = csg.toMesh();
+			shelve1.material = windowFrameMaterial;
+			shelve1.receiveShadow = true;
+			shelve1.castShadow = true;
+			babyShelves.add(shelve1);
+
+			var csg = new CSG();
+			csg.subtract([shelve2Box, carveShelve2]);
+			var shelve1 = csg.toMesh();
+			shelve1.material = bedFrameMaterial;
+			shelve1.receiveShadow = true;
+			shelve1.castShadow = true;
+			babyShelves.add(shelve1);
+
+			var csg = new CSG();
+			csg.subtract([shelve3Box, carveShelve3]);
+			var shelve1 = csg.toMesh();
+			shelve1.material = bedFrameMaterial;
+			shelve1.receiveShadow = true;
+			shelve1.castShadow = true;
+			babyShelves.add(shelve1);
+
+			var books = addStackedBooks(5, { x: -0.1, y: -0.25, z: 0 }, true);
+			babyShelves.add(books);
+			var books = addStackedBooks(3, { x: -0.4, y: -0.25, z: 0 }, false);
+			babyShelves.add(books);
+			var books = addStackedBooks(2, { x: 0.2, y: 0.3, z: 0 }, true);
+			books.rotation.set(0, - Math.PI / 6, 0)
+			babyShelves.add(books);
+
+			/*
+			var csg = new CSG();
+				csg.subtract([doorFrameBox, doorFrameCut]);
+
+				var doorFrame = csg.toMesh();
+				doorFrame.material = windowFrameMaterial;
+				doorFrame.receiveShadow = true;
+				doorFrame.castShadow = true;
+				door.add(doorFrame);
+			*/
+		}
+
+		// couch
+		{
+			var couch = new THREE.Group();
+			scene.add(couch);
+			couch.position.set(1.2, 0.45, 3.2);
+			var couchMaterial = new THREE.MeshLambertMaterial({ color: "darkslategray" });
+
+			var backboard = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.9, 2.4), couchMaterial);
+			backboard.receiveShadow = true;
+			backboard.castShadow = true;
+			couch.add(backboard);
+
+			var cushionBox = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.3, 2.3), couchMaterial);
+			cushionBox.position.set(0.4, -0.3, 0);
+			cushionBox.receiveShadow = true;
+			cushionBox.castShadow = true;
+			couch.add(cushionBox);
+
+			var cushion = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.2, 2.4), couchMaterial);
+			cushion.position.set(0.4, -0.1, 0);
+			cushion.receiveShadow = true;
+			cushion.castShadow = true;
+			couch.add(cushion);
+
+			var cushionBoxExtension = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.3, 0.7), couchMaterial);
+			cushionBoxExtension.position.set(1.1, -0.3, 0.8);
+			cushionBoxExtension.receiveShadow = true;
+			cushionBoxExtension.castShadow = true;
+			couch.add(cushionBoxExtension);
+
+			var cushionExtension = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.2, 0.8), couchMaterial);
+			cushionExtension.position.set(1.1, -0.1, 0.8);
+			cushionExtension.receiveShadow = true;
+			cushionExtension.castShadow = true;
+			couch.add(cushionExtension);
+
+			var armrest = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.6, 0.2), couchMaterial);
+			armrest.position.set(0.4, -0.15, 1.3);
+			armrest.receiveShadow = true;
+			armrest.castShadow = true;
+			couch.add(armrest);
+
+			var armrest2 = armrest.clone();
+			armrest2.position.set(0.4, -0.15, -1.3);
+			couch.add(armrest2);
+
+			var backCushion = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.5, 2.3), couchMaterial);
+			backCushion.position.set(0.2, 0.2, 0);
+			backCushion.rotation.set(0, 0, Math.PI / 10);
+			backCushion.receiveShadow = true;
+			backCushion.castShadow = true;
+			couch.add(backCushion);
+		}
+
+
+		//tv station
+		{
+			var consoleBox = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 1.6), bedFrameMaterial);
+			consoleBox.position.set(4.6, 0.25, 3.8);
+
+			var carveConsole = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 1.4), cutoutMaterial);
+			carveConsole.position.set(4.6, 0.25, 3.8);
+
+			var csg = new CSG();
+			csg.subtract([consoleBox, carveConsole]);
+			var console = csg.toMesh();
+			console.material = bedFrameMaterial;
+			console.receiveShadow = true;
+			console.castShadow = true;
+			scene.add(console);
+
+			var books = addStackedBooks(23, { x: 4.6, y: 0.1, z: 4.6 }, false);
+			books.rotation.set(0, Math.PI / 2, 0);
+			scene.add(books);
+
+			var tvMaterial = new THREE.MeshLambertMaterial({ color: "black" });
+			var tvScreen = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.8, 1.2), tvMaterial);
+			tvScreen.position.set(4.6, 1, 3.8);
+			scene.add(tvScreen);
+
+			var tvLeg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.1, 0.05), tvMaterial);
+			tvLeg.position.set(4.6, 0.6, 3.8);
+			scene.add(tvLeg);
+
+			var tvLeg = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.05, 0.4), tvMaterial);
+			tvLeg.position.set(4.6, 0.55, 3.8);
+			scene.add(tvLeg);
+		}
+
+
+		// bedroom
+		{
+			var bed = new THREE.Group();
+			scene.add(bed);
+			bed.position.set(-2.55, 0.4, 1.45);
+
+			var backboard = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.8, 1.5), bedFrameMaterial);
+			backboard.position.set(-1.1, 0, 0)
+			backboard.receiveShadow = true;
+			backboard.castShadow = true;
+			bed.add(backboard);
+
+			var bedBox = new THREE.Mesh(new THREE.BoxGeometry(2, 0.4, 1.5), bedFrameMaterial);
+			bedBox.position.set(0, -0.2, 0)
+			bedBox.receiveShadow = true;
+			bedBox.castShadow = true;
+			bed.add(bedBox);
+
+			var mattress = new THREE.Mesh(new THREE.BoxGeometry(1.96, 0.3, 1.4), linenMaterial);
+			mattress.position.set(-0.04, 0, 0)
+			mattress.receiveShadow = true;
+			mattress.castShadow = true;
+			bed.add(mattress);
+
+			var bedCoverMaterial = new THREE.MeshLambertMaterial({ color: "lightsalmon" });
+
+			var bedCover = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.35, 1.6), bedCoverMaterial);
+			bedCover.position.set(0.15, 0, 0)
+			bedCover.receiveShadow = true;
+			bedCover.castShadow = true;
+			bed.add(bedCover);
+
+			var pillow = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.15, 0.60), linenMaterial);
+			pillow.rotation.set(0, 0, -Math.PI / 9)
+			pillow.position.set(-0.8, 0.3, 0.35)
+			pillow.receiveShadow = true;
+			pillow.castShadow = true;
+			bed.add(pillow);
+
+			var pillow = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.15, 0.60), linenMaterial);
+			pillow.rotation.set(0, 0, -Math.PI / 9)
+			pillow.position.set(-0.8, 0.3, -0.35)
+			pillow.receiveShadow = true;
+			pillow.castShadow = true;
+			bed.add(pillow);
+
+		}
+
+		// kitchen
+		{
+			var cupboardMaterial = new THREE.MeshLambertMaterial({ color: "ivory" });
+
+			var lowerCupboards = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 3.8), cupboardMaterial);
+			lowerCupboards.position.set(6.5, 0.4, -1);
+			lowerCupboards.receiveShadow = true;
+			lowerCupboards.castShadow = true;
+			scene.add(lowerCupboards);
+
+			var countertopMaterial = new THREE.MeshLambertMaterial({ color: "peru" });
+			var countertop = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.1, 3.9), countertopMaterial);
+			countertop.position.set(6.5, 0.9, -1);
+			countertop.receiveShadow = true;
+			countertop.castShadow = true;
+			scene.add(countertop);
+
+			var lowerCupboards = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.6, 3.8), cupboardMaterial);
+			lowerCupboards.position.set(6.5, 1.9, -1);
+			lowerCupboards.receiveShadow = true;
+			lowerCupboards.castShadow = true;
+			scene.add(lowerCupboards);
+
+			var lowerCupboardsExtension = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.6), cupboardMaterial);
+			lowerCupboardsExtension.position.set(5.6, 0.4, -2.5);
+			lowerCupboardsExtension.receiveShadow = true;
+			lowerCupboardsExtension.castShadow = true;
+			scene.add(lowerCupboardsExtension);
+
+			var countertopExtension = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.1, 0.7), countertopMaterial);
+			countertopExtension.position.set(5.6, 0.9, -2.5);
+			countertopExtension.receiveShadow = true;
+			countertopExtension.castShadow = true;
+			scene.add(countertopExtension);
+
+
+			// table
+
+			var table = new THREE.Group();
+			table.position.set(3.2, 0.4, -1.6);
+			scene.add(table);
+
+			var tableLength = 2
+			var tableWidth = 1
+			var plot = new THREE.Mesh(new THREE.BoxGeometry(tableWidth, 0.1, tableLength), bedFrameMaterial);
+			plot.position.set(0, 0.4, 0);
+			plot.receiveShadow = true;
+			plot.castShadow = true;
+			table.add(plot);
+
+			var leg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.8), bedFrameMaterial);
+			leg.position.set(tableWidth / 2 - 0.1, 0, tableLength / 2 - 0.1);
+			leg.receiveShadow = true;
+			leg.castShadow = true;
+			table.add(leg);
+
+			var leg2 = leg.clone();
+			leg.position.set(-(tableWidth / 2 - 0.1), 0, (tableLength / 2 - 0.1));
+			table.add(leg2);
+
+			var leg3 = leg.clone();
+			leg3.position.set((tableWidth / 2 - 0.1), 0, -(tableLength / 2 - 0.1));
+			table.add(leg3);
+
+			var leg4 = leg.clone();
+			leg4.position.set(-(tableWidth / 2 - 0.1), 0, -(tableLength / 2 - 0.1));
+			table.add(leg4);
+
+			function createChair() {
+				var chair = new THREE.Group();
+				var plot = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.05, 0.45), bedFrameMaterial);
+				plot.receiveShadow = true;
+				plot.castShadow = true;
+				chair.add(plot);
+
+				var backLeg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.9, 0.1), bedFrameMaterial);
+				backLeg.position.set(-0.27, 0, 0.17);
+				backLeg.receiveShadow = true;
+				backLeg.castShadow = true;
+				chair.add(backLeg);
+
+				var backLeg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.9, 0.1), bedFrameMaterial);
+				backLeg.position.set(-0.27, 0, -0.17);
+				backLeg.receiveShadow = true;
+				backLeg.castShadow = true;
+				chair.add(backLeg);
+
+				var backLeg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.45, 0.1), bedFrameMaterial);
+				backLeg.position.set(0.17, -0.22, -0.17);
+				backLeg.receiveShadow = true;
+				backLeg.castShadow = true;
+				chair.add(backLeg);
+
+				var backLeg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.45, 0.1), bedFrameMaterial);
+				backLeg.position.set(0.17, -0.22, 0.17);
+				backLeg.receiveShadow = true;
+				backLeg.castShadow = true;
+				chair.add(backLeg);
+
+				var backboard = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.3, 0.45), bedFrameMaterial);
+				backboard.position.set(-0.27, 0.25, 0)
+				backboard.receiveShadow = true;
+				backboard.castShadow = true;
+				chair.add(backboard);
+
+				return chair;
+			}
+
+			var newChair = createChair();
+			newChair.position.set(2.8, 0.45, -2);
+			scene.add(newChair);
+
+			var newChair = createChair();
+			newChair.position.set(2.8, 0.45, -1.2);
+			scene.add(newChair);
+
+			var newChair = createChair();
+			newChair.position.set(3.6, 0.45, -2);
+			newChair.rotation.set(0, Math.PI, 0);
+			scene.add(newChair);
+
+			var newChair = createChair();
+			newChair.position.set(3.6, 0.45, -1.2);
+			newChair.rotation.set(0, Math.PI, 0);
+			scene.add(newChair);
+		}
+	</script>
+
+</body>
+
+</html>
